@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEXUS | Intelligent B2B Analytics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-dark: #050507;
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-bg: rgba(20, 20, 25, 0.6);
+            --accent-cyan: #00f2ff;
+        }
+        
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: var(--bg-dark);
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0a0a0a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-cyan);
+        }
+
+        /* Glassmorphism Utilities */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+        }
+
+        /* Animation Utilities */
+        .reveal-on-scroll {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .reveal-on-scroll.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .nav-dot {
+            transition: all 0.3s ease;
+        }
+        .nav-dot.active {
+            background-color: var(--accent-cyan);
+            box-shadow: 0 0 10px var(--accent-cyan);
+            transform: scale(1.2);
+        }
+
+        /* Hover Effects */
+        .hover-lift {
+            transition: transform 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease;
+        }
+        .hover-lift:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-cyan);
+            box-shadow: 0 10px 40px -10px rgba(0, 242, 255, 0.15);
+        }
+
+        /* Marquee */
+        .marquee-container {
+            mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+        }
+        .marquee-content {
+            animation: scroll 20s linear infinite;
+        }
+        @keyframes scroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+    </style>
+</head>
+<body x-data="scrollSpy()" class="antialiased selection:bg-cyan-500 selection:text-black">
+
+    <!-- RAIL LAYOUT CONTAINER -->
+    <div class="flex flex-col lg:flex-row min-h-screen">
+        
+        <!-- SIDE RAIL (Fixed on Desktop, Top on Mobile) -->
+        <aside class="lg:w-[28%] w-full lg:h-screen lg:fixed lg:top-0 lg:left-0 z-50 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-white/10 bg-[#050507] p-6 lg:p-10">
+            
+            <!-- Brand -->
+            <div class="flex items-center justify-between lg:block">
+                <div class="mb-8 group cursor-pointer">
+                    <h1 class="text-3xl font-bold tracking-tighter uppercase group-hover:text-cyan-400 transition-colors duration-300">Nexus_</h1>
+                    <div class="h-1 w-8 bg-cyan-400 mt-1 group-hover:w-full transition-all duration-500 ease-out"></div>
+                </div>
+                
+                <!-- Mobile Menu Toggle (Hidden on desktop) -->
+                <button @click="mobileOpen = !mobileOpen" class="lg:hidden text-white focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                </button>
+            </div>
+
+            <!-- Navigation (Desktop) -->
+            <nav class="hidden lg:flex flex-col space-y-6">
+                <template x-for="(section, index) in sections" :key="index">
+                    <a :href="'#' + section.id" 
+                       class="flex items-center group space-x-4 opacity-60 hover:opacity-100 transition-opacity duration-300"
+                       :class="{ 'opacity-100 text-white': activeSection === section.id }">
+                        <div class="w-2 h-2 rounded-full bg-white nav-dot" :class="{ 'active': activeSection === section.id }"></div>
+                        <span class="text-sm font-mono tracking-widest uppercase" x-text="section.label"></span>
+                    </a>
+                </template>
+            </nav>
+
+            <!-- Live Status Module -->
+            <div class="hidden lg:block">
+                <div class="glass-panel p-5 rounded-lg">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs font-mono text-gray-400">SYSTEM STATUS</span>
+                        <div class="flex items-center space-x-2">
+                            <span class="relative flex h-2 w-2">
+                              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                              <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                            </span>
+                            <span class="text-xs text-green-500 font-bold">ONLINE</span>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-xs">
+                            <span class="text-gray-500">Latency</span>
+                            <span class="font-mono">12ms</span>
+                        </div>
+                        <div class="flex justify-between text-xs">
+                            <span class="text-gray-500">Ingest</span>
+                            <span class="font-mono">4.2TB/s</span>
+                        </div>
+                    </div>
+                    <button class="mt-4 w-full py-2 bg-white text-black font-bold text-xs uppercase tracking-widest hover:bg-cyan-400 hover:scale-105 transition-all duration-300">Get Access</button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT STREAM -->
+        <main class="lg:w-[72%] w-full lg:ml-auto relative bg-[#050507]">
+            
+            <!-- Decorative Background Grid -->
+            <div class="absolute inset-0 z-0 opacity-10 pointer-events-none" 
+                 style="background-image: linear-gradient(#333 1px, transparent 1px), linear-gradient(90deg, #333 1px, transparent 1px); background-size: 40px 40px;"></div>
+
+            <!-- Section 1: Introduction -->
+            <section id="intro" class="relative z-10 min-h-screen flex items-end p-6 lg:p-20 border-b border-white/5">
+                <div class="max-w-4xl">
+                    <span class="font-mono text-cyan-400 text-sm tracking-widest mb-4 block reveal-on-scroll">/// INITIALIZING VIEW</span>
+                    <h2 class="text-5xl lg:text-8xl font-bold leading-none mb-8 reveal-on-scroll" style="transition-delay: 100ms">
+                        CLARITY <br>
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-gray-500 to-white">IN TOTAL</span> <br>
+                        CHAOS.
+                    </h2>
+                    <p class="text-xl text-gray-400 max-w-lg mb-12 reveal-on-scroll leading-relaxed" style="transition-delay: 200ms">
+                        Stop guessing. Nexus ingests messy B2B data streams and crystallizes them into actionable, predictive intelligence instantly.
+                    </p>
+                    <div class="flex items-center space-x-6 reveal-on-scroll" style="transition-delay: 300ms">
+                        <a href="#" class="border-b border-white pb-1 hover:text-cyan-400 hover:border-cyan-400 transition-all">Explore Demo</a>
+                        <span class="text-gray-600">|</span>
+                        <a href="#" class="font-mono text-sm text-gray-500 hover:text-white transition-colors">Read Documentation -></a>
+                    </div>
+                </div>
+                
+                <!-- Abstract Hero Image Positioned Absolute -->
+                <div class="absolute top-20 right-0 w-1/2 h-1/2 lg:w-96 lg:h-96 opacity-40 mix-blend-screen pointer-events-none">
+                     <img src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=1000&auto=format&fit=crop" alt="Cyberpunk Data" class="object-cover w-full h-full rounded-full blur-3xl animate-pulse">
+                </div>
+            </section>
+
+            <!-- Section 2: Features (Collage/Grid) -->
+            <section id="platform" class="relative z-10 min-h-screen p-6 lg:p-20">
+                <div class="flex flex-col lg:flex-row justify-between items-end mb-16 reveal-on-scroll">
+                    <div>
+                        <span class="font-mono text-xs text-gray-500 mb-2 block">01 / CAPABILITIES</span>
+                        <h3 class="text-4xl font-bold">The Core Engine</h3>
+                    </div>
+                    <p class="font-mono text-sm text-gray-400 mt-4 lg:mt-0 text-right max-w-xs">
+                        Designed for speed. <br>Built for scale.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Feature Card 1 -->
+                    <div class="glass-panel p-8 rounded-xl hover-lift reveal-on-scroll">
+                        <div class="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center mb-6">
+                            <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        </div>
+                        <h4 class="text-xl font-bold mb-3">Real-time Ingestion</h4>
+                        <p class="text-gray-400 text-sm leading-relaxed">
+                            Connect to Snowflake, Postgres, or REST APIs. We normalize disparate schemas in milliseconds, not months.
+                        </p>
+                        <div class="mt-6 h-32 w-full bg-black/50 rounded overflow-hidden relative">
+                            <div class="absolute inset-0 opacity-50" style="background-image: url('https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=500&auto=format&fit=crop'); background-size: cover;"></div>
+                            <div class="absolute bottom-2 left-2 font-mono text-[10px] text-green-400">SYNC: ACTIVE</div>
+                        </div>
+                    </div>
+
+                    <!-- Feature Card 2 -->
+                    <div class="glass-panel p-8 rounded-xl hover-lift reveal-on-scroll" style="transition-delay: 100ms">
+                        <div class="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center mb-6">
+                            <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z"></path></svg>
+                        </div>
+                        <h4 class="text-xl font-bold mb-3">Predictive Modeling</h4>
+                        <p class="text-gray-400 text-sm leading-relaxed">
+                            Our neural engine identifies churn risk and upsell opportunities before your sales team even logs in.
+                        </p>
+                        <div class="mt-6 flex items-end justify-between space-x-1 h-32">
+                             <div class="w-1/5 bg-gray-800 h-1/3 rounded-t hover:bg-cyan-500 transition-colors"></div>
+                             <div class="w-1/5 bg-gray-800 h-2/3 rounded-t hover:bg-cyan-500 transition-colors"></div>
+                             <div class="w-1/5 bg-gray-800 h-1/2 rounded-t hover:bg-cyan-500 transition-colors"></div>
+                             <div class="w-1/5 bg-gray-800 h-full rounded-t hover:bg-cyan-500 transition-colors"></div>
+                             <div class="w-1/5 bg-gray-800 h-3/4 rounded-t hover:bg-cyan-500 transition-colors"></div>
+                        </div>
+                    </div>
+
+                    <!-- Feature Card 3 (Full Width) -->
+                    <div class="md:col-span-2 glass-panel p-8 rounded-xl hover-lift reveal-on-scroll" style="transition-delay: 200ms">
+                         <div class="flex flex-col md:flex-row items-center md:items-start gap-8">
+                             <div class="flex-1">
+                                <h4 class="text-xl font-bold mb-3">Visual Logic Builder</h4>
+                                <p class="text-gray-400 text-sm leading-relaxed mb-6">
+                                    No SQL? No problem. Construct complex queries using our node-based visual interface. Drag, drop, deploy.
+                                </p>
+                                <a href="#" class="text-xs font-mono border border-gray-600 px-4 py-2 rounded uppercase hover:bg-white hover:text-black transition-colors">See Workflow</a>
+                             </div>
+                             <div class="w-full md:w-1/2 h-48 rounded overflow-hidden relative border border-gray-800">
+                                 <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=800&auto=format&fit=crop" alt="Data Dashboard" class="object-cover w-full h-full opacity-60 hover:opacity-100 transition-opacity duration-500 hover:scale-105">
+                             </div>
+                         </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Marquee Break -->
+            <div class="py-12 bg-white/5 border-y border-white/5 overflow-hidden">
+                <div class="marquee-container relative w-full">
+                    <div class="marquee-content flex space-x-16 whitespace-nowrap">
+                        <span class="text-2xl font-mono text-gray-500">SOC2 COMPLIANT</span>
+                        <span class="text-2xl font-mono text-gray-500">GDPR READY</span>
+                        <span class="text-2xl font-mono text-gray-500">END-TO-END ENCRYPTION</span>
+                        <span class="text-2xl font-mono text-gray-500">99.99% UPTIME</span>
+                        <span class="text-2xl font-mono text-gray-500">SOC2 COMPLIANT</span>
+                        <span class="text-2xl font-mono text-gray-500">GDPR READY</span>
+                        <span class="text-2xl font-mono text-gray-500">END-TO-END ENCRYPTION</span>
+                        <span class="text-2xl font-mono text-gray-500">99.99% UPTIME</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 3: Data / Editorial -->
+            <section id="pricing" class="relative z-10 min-h-screen p-6 lg:p-20 flex flex-col justify-center">
+                <div class="reveal-on-scroll">
+                    <span class="font-mono text-xs text-cyan-400 mb-6 block">02 / SCALE</span>
+                    <h3 class="text-5xl lg:text-7xl font-bold mb-10">Designed for the<br>Enterprise.</h3>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div class="border-l border-cyan-400/30 pl-6 reveal-on-scroll" style="transition-delay: 100ms">
+                        <div class="text-4xl font-mono font-bold mb-2">500TB</div>
+                        <div class="text-sm text-gray-400">Daily ingestion capacity per node cluster.</div>
+                    </div>
+                    <div class="border-l border-cyan-400/30 pl-6 reveal-on-scroll" style="transition-delay: 200ms">
+                        <div class="text-4xl font-mono font-bold mb-2">12ms</div>
+                        <div class="text-sm text-gray-400">Average query latency for cold storage data.</div>
+                    </div>
+                    <div class="border-l border-cyan-400/30 pl-6 reveal-on-scroll" style="transition-delay: 300ms">
+                        <div class="text-4xl font-mono font-bold mb-2">400+</div>
+                        <div class="text-sm text-gray-400">Native integrations with leading SaaS tools.</div>
+                    </div>
+                </div>
+
+                <!-- CTA Box -->
+                <div class="mt-20 p-10 bg-gradient-to-r from-gray-900 to-black border border-gray-800 rounded-2xl relative overflow-hidden reveal-on-scroll">
+                    <div class="absolute top-0 right-0 w-64 h-64 bg-cyan-500 blur-[120px] opacity-20"></div>
+                    <div class="relative z-10">
+                        <h4 class="text-3xl font-bold mb-4">Ready to deploy?</h4>
+                        <p class="text-gray-400 max-w-md mb-8">Start your 14-day trial on our dedicated clusters. No credit card required for sandbox access.</p>
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            <button class="px-8 py-4 bg-white text-black font-bold uppercase tracking-wider hover:bg-cyan-400 transition-colors">
+                                Start Free Trial
+                            </button>
+                            <button class="px-8 py-4 border border-white/20 text-white font-bold uppercase tracking-wider hover:bg-white/10 transition-colors">
+                                Talk to Sales
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Footer -->
+            <footer class="p-6 lg:p-20 border-t border-white/10 text-gray-500 font-mono text-xs">
+                <div class="flex justify-between items-center">
+                    <div>
+                        &copy; 2024 NEXUS ANALYTICS INC.
+                    </div>
+                    <div class="flex space-x-6">
+                        <a href="#" class="hover:text-white transition-colors">PRIVACY</a>
+                        <a href="#" class="hover:text-white transition-colors">TERMS</a>
+                        <a href="#" class="hover:text-white transition-colors">STATUS</a>
+                    </div>
+                </div>
+            </footer>
+
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        function scrollSpy() {
+            return {
+                mobileOpen: false,
+                activeSection: 'intro',
+                sections: [
+                    { id: 'intro', label: 'Overview' },
+                    { id: 'platform', label: 'Platform' },
+                    { id: 'pricing', label: 'Scale & Access' }
+                ],
+                init() {
+                    // Intersection Observer for Reveal on Scroll
+                    const observerOptions = {
+                        root: null,
+                        rootMargin: '0px',
+                        threshold: 0.1
+                    };
+
+                    const observer = new IntersectionObserver((entries) => {
+                        entries.forEach(entry => {
+                            if (entry.isIntersecting) {
+                                entry.target.classList.add('active');
+                            }
+                        });
+                    }, observerOptions);
+
+                    document.querySelectorAll('.reveal-on-scroll').forEach((el) => {
+                        observer.observe(el);
+                    });
+
+                    // Scroll Spy for Nav
+                    const sectionObserver = new IntersectionObserver((entries) => {
+                        entries.forEach(entry => {
+                            if (entry.isIntersecting) {
+                                this.activeSection = entry.target.id;
+                            }
+                        });
+                    }, { rootMargin: '-50% 0px -50% 0px' });
+
+                    this.sections.forEach(section => {
+                        const el = document.getElementById(section.id);
+                        if (el) sectionObserver.observe(el);
+                    });
+                }
+            }
+        }
+    </script>
+
+<script>
+  let inspectorMode = false;
+  let hoveredElement = null;
+  let selectedElement = null;
+  
+  window.addEventListener('message', (event) => {
+    if (event.data?.type === 'SET_INSPECTOR_MODE') {
+      inspectorMode = event.data.enabled;
+      document.body.style.cursor = inspectorMode ? 'crosshair' : 'default';
+    }
+    
+    if (event.data?.type === 'LOCAL_UPDATE' && selectedElement) {
+      const update = event.data.update;
+      
+      if (update.text !== undefined) {
+        selectedElement.innerText = update.text;
+      }
+      
+      if (update.styles) {
+        Object.entries(update.styles).forEach(([prop, value]) => {
+          selectedElement.style[prop] = value;
+        });
+      }
+    }
+  });
+  
+  document.addEventListener('mouseover', (e) => {
+    if (!inspectorMode) return;
+    if (hoveredElement && hoveredElement !== selectedElement) {
+      hoveredElement.style.outline = '';
+    }
+    hoveredElement = e.target;
+    if (hoveredElement !== selectedElement) {
+      hoveredElement.style.outline = '2px solid #06b6d4';
+    }
+  });
+  
+  document.addEventListener('mouseout', (e) => {
+    if (!inspectorMode || !hoveredElement) return;
+    if (hoveredElement !== selectedElement) {
+      hoveredElement.style.outline = '';
+    }
+  });
+  
+  document.addEventListener('click', (e) => {
+    if (!inspectorMode) return;
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (selectedElement) {
+      selectedElement.style.outline = '';
+    }
+    
+    const el = e.target;
+    selectedElement = el;
+    el.style.outline = '3px solid #06b6d4';
+    
+    const rect = el.getBoundingClientRect();
+    const styles = window.getComputedStyle(el);
+    
+    window.parent.postMessage({
+      type: 'ELEMENT_SELECTED',
+      element: {
+        tagName: el.tagName.toLowerCase(),
+        text: el.innerText?.substring(0, 500) || '',
+        className: el.className || '',
+        styles: {
+          color: styles.color,
+          backgroundColor: styles.backgroundColor,
+          fontSize: styles.fontSize,
+          fontWeight: styles.fontWeight,
+          padding: styles.padding,
+          margin: styles.margin,
+        },
+        rect: {
+          top: rect.top,
+          left: rect.left,
+          width: rect.width,
+          height: rect.height,
+        },
+        selector: el.id ? '#' + el.id : (el.className ? '.' + el.className.split(' ')[0] : el.tagName.toLowerCase())
+      }
+    }, '*');
+  }, true);
+</script>
+</body>
+</html>
